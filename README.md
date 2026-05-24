@@ -1,6 +1,6 @@
-# Spaxio
+# Spaxio Assistant
 
-Spaxio is an AI-native operating system for students, creators, freelancers, and young professionals.
+Spaxio Assistant is an AI-native operating system for students, creators, freelancers, and young professionals.
 
 This build is prepared for production deployment on Vercel with:
 
@@ -51,19 +51,22 @@ https://your-domain.com/auth/confirm
 
 ## Stripe Setup
 
-1. Create a Stripe product named `Spaxio Pro`.
+1. Create a Stripe product named `Spaxio Assistant Pro`.
 2. Create a recurring monthly price for CA$15/month.
 3. Copy the price ID into `STRIPE_PRO_PRICE_ID`.
-4. Create a second recurring monthly price for CA$10/month for invite promotions.
-5. Copy the invite price ID into `STRIPE_PRO_REFERRAL_PRICE_ID`.
-6. Use a restricted API key when possible, scoped to the Stripe resources this app needs.
-7. Add a webhook endpoint:
+4. Create a recurring yearly price for the annual Pro subscription.
+5. Copy the yearly price ID into `STRIPE_PRO_YEARLY_PRICE_ID`.
+6. Create a second recurring monthly price for CA$10/month for invite promotions.
+7. Copy the invite price ID into `STRIPE_PRO_REFERRAL_PRICE_ID`.
+8. Set `REFERRAL_REFRESH_CRON_SECRET` and schedule a daily `POST /api/referrals/refresh` request with `Authorization: Bearer $REFERRAL_REFRESH_CRON_SECRET` so expired referral months return to the standard price.
+9. Use a restricted API key when possible, scoped to the Stripe resources this app needs.
+10. Add a webhook endpoint:
 
 ```text
 https://your-domain.com/api/stripe/webhook
 ```
 
-8. Subscribe the webhook to:
+11. Subscribe the webhook to:
 
 ```text
 checkout.session.completed
@@ -72,7 +75,15 @@ customer.subscription.updated
 customer.subscription.deleted
 ```
 
-9. Copy the webhook signing secret into `STRIPE_WEBHOOK_SECRET`.
+12. Copy the webhook signing secret into `STRIPE_WEBHOOK_SECRET`.
+
+## Referral Discount Rules
+
+- Pro is CA$15/month by default, with a yearly option available when `STRIPE_PRO_YEARLY_PRICE_ID` is configured.
+- Each invite code can be used by one new friend. After a successful signup, the inviter's code is considered used and a fresh invite link is generated.
+- The inviter gets the CA$10/month referral price for the first referral month and receives an email confirmation when the invite is used.
+- To keep CA$10/month, the inviter must invite one new friend each month.
+- The friend who joins from an invite does not receive the CA$10/month price. They start at CA$15/month until they invite someone with their own link.
 
 ## Environment Variables
 
@@ -86,6 +97,7 @@ SUPABASE_SERVICE_ROLE_KEY=
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
 STRIPE_PRO_PRICE_ID=
+STRIPE_PRO_YEARLY_PRICE_ID=
 STRIPE_PRO_REFERRAL_PRICE_ID=
 ANTHROPIC_API_KEY=
 ANTHROPIC_MODEL=claude-sonnet-4-20250514
@@ -144,4 +156,4 @@ npm run build
 
 The app calls `/api/ai/workspace`, which uses the Anthropic Messages API with `ANTHROPIC_API_KEY`.
 The key stays server-side. Captures fall back to deterministic local extraction if the key is missing or the model request fails.
-# SpaxioNotes
+# Spaxio Assistant Notes

@@ -6,8 +6,11 @@ import { BrandLogo } from "@/components/brand-logo";
 import { getSiteUrl } from "@/lib/url";
 
 export const metadata: Metadata = {
+  title: "Spaxio Assistant | AI notes, calendar, and reminders",
+  description:
+    "Spaxio Assistant turns text and speech into AI notes, calendar events, reminders, tasks, and searchable workspace memory.",
   alternates: {
-    canonical: "/",
+    canonical: "/en",
     languages: {
       en: "/en",
       fr: "/",
@@ -15,30 +18,30 @@ export const metadata: Metadata = {
   },
 };
 
-export default function LandingPage() {
-  const siteUrl = getSiteUrl();
+export default function EnglishLandingPage() {
+  const siteUrl = `${getSiteUrl()}/en`;
   const referralRules = [
-    "Chaque code d'invitation peut etre utilise par une seule nouvelle personne.",
-    "Quand votre contact s'inscrit, votre code est marque comme utilise et un nouveau lien d'invitation est genere.",
-    "Vous obtenez Pro a 10 $ CA/mois pour le premier mois de reference, puis vous conservez ce prix en invitant une nouvelle personne chaque mois.",
-    "Les contacts commencent a 15 $ CA/mois jusqu'a ce qu'ils invitent quelqu'un avec leur propre lien.",
+    "Each invite code can be used by one new friend.",
+    "When your friend joins, your code is marked used and a fresh invite link is generated.",
+    "You get Pro at CA$10/mo for the first referral month, then keep that price by inviting one new person each month.",
+    "Friends start at CA$15/mo until they invite someone with their own link.",
   ];
   const faqs = [
     [
-      "Comment fonctionne le rabais d'invitation?",
-      "Votre lien d'invitation vous donne le prix de reference de 10 $ CA/mois apres l'inscription d'une nouvelle personne. Cette personne commence au prix Pro standard de 15 $ CA/mois.",
+      "How does the invite discount work?",
+      "Your invite link gives you the CA$10/mo referral price after one new person joins. That person starts at the standard CA$15/mo Pro price.",
     ],
     [
-      "Un code d'invitation peut-il etre utilise plus d'une fois?",
-      "Non. Chaque code d'invitation est a usage unique. Apres son utilisation, votre compte recoit un nouveau lien d'invitation.",
+      "Can one invite code be used more than once?",
+      "No. Each invite code is single-use. After it is used successfully, your account receives a new invite link.",
     ],
     [
-      "Comment conserver le prix mensuel de 10 $ CA?",
-      "Invitez une nouvelle personne chaque mois. Si aucune nouvelle personne ne s'inscrit pendant le mois de reference, le prix Pro standard de 15 $ CA/mois s'applique.",
+      "How do I keep the CA$10 monthly price?",
+      "Invite one new person each month. If no new person joins during the referral month, the standard CA$15/mo Pro price applies.",
     ],
     [
-      "Que comprend Pro?",
-      "Pro debloque les fonctions de capture IA axees sur la voix et l'acces par abonnement gere avec Stripe.",
+      "What does Pro include?",
+      "Pro unlocks voice-first AI capture features and Stripe-managed subscription access for the app.",
     ],
   ];
   const softwareSchema = {
@@ -49,11 +52,11 @@ export default function LandingPage() {
     operatingSystem: "Web",
     url: siteUrl,
     description:
-      "Espace de travail IA pour notes vocales, calendrier, rappels, planification de taches et memoire consultable.",
+      "AI workspace for voice notes, calendar, reminders, task planning, and searchable memory.",
     offers: [
       {
         "@type": "Offer",
-        name: "Spaxio Assistant gratuit",
+        name: "Spaxio Assistant Free",
         price: "0",
         priceCurrency: "CAD",
       },
@@ -91,30 +94,30 @@ export default function LandingPage() {
             <BrandLogo className="border border-zinc-200" />
             <div>
               <p className="text-lg font-semibold leading-none">Spaxio Assistant</p>
-              <p className="mt-1 text-xs text-zinc-500">Espace de travail IA</p>
+              <p className="mt-1 text-xs text-zinc-500">AI workspace</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Link className="hidden text-sm font-medium text-zinc-600 hover:text-zinc-950 md:inline" href="/fr/confidentialite">
-              Confidentialite
+            <Link className="hidden text-sm font-medium text-zinc-600 hover:text-zinc-950 md:inline" href="/privacy">
+              Privacy
             </Link>
-            <Link className="hidden text-sm font-medium text-zinc-600 hover:text-zinc-950 md:inline" href="/fr/conditions">
-              Conditions
+            <Link className="hidden text-sm font-medium text-zinc-600 hover:text-zinc-950 md:inline" href="/terms">
+              Terms
             </Link>
-            <div aria-label="Changer de langue" className="flex h-10 items-center rounded-md border border-zinc-200 bg-white p-1">
-              <span className="inline-flex h-8 items-center justify-center rounded-sm bg-zinc-950 px-3 text-sm font-medium text-white">
-                FR
-              </span>
+            <div aria-label="Change language" className="flex h-10 items-center rounded-md border border-zinc-200 bg-white p-1">
               <Link
                 className="inline-flex h-8 items-center justify-center rounded-sm px-3 text-sm font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950"
-                href="/en"
-                hrefLang="en"
+                href="/"
+                hrefLang="fr"
               >
-                EN
+                FR
               </Link>
+              <span className="inline-flex h-8 items-center justify-center rounded-sm bg-zinc-950 px-3 text-sm font-medium text-white">
+                EN
+              </span>
             </div>
             <Link className="primary-button" href="/login">
-              Connexion
+              Sign in
               <ArrowRight size={17} aria-hidden="true" />
             </Link>
           </div>
@@ -122,25 +125,25 @@ export default function LandingPage() {
 
         <div className="grid flex-1 gap-10 py-12 lg:grid-cols-[minmax(0,1fr)_460px]">
           <div>
-            <p className="text-sm font-medium uppercase tracking-[0.16em] text-zinc-500">Espace de travail IA</p>
+            <p className="text-sm font-medium uppercase tracking-[0.16em] text-zinc-500">AI workspace</p>
             <h1 className="mt-4 text-4xl font-semibold tracking-normal sm:text-5xl lg:text-6xl xl:text-7xl">
-              Notes IA, calendrier et rappels a partir de votre contexte quotidien.
+              AI notes, calendar, and reminders from everyday context.
             </h1>
             <p className="mt-5 text-lg leading-8 text-zinc-600 lg:text-xl">
-              Spaxio Assistant transforme vos notes ecrites et votre voix en memoire consultable, taches, evenements de calendrier et
-              rappels pour les etudes, le travail client et la planification personnelle.
+              Spaxio Assistant turns written notes and speech into searchable memory, tasks, calendar events, and reminders for school,
+              client work, and personal planning.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link className="primary-button" href="/login">
-                Commencer
+                Get started
                 <ArrowRight size={17} aria-hidden="true" />
               </Link>
               <Link className="inline-flex h-10 items-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-medium text-zinc-700" href="/app">
-                Ouvrir l&apos;app
+                Open app
               </Link>
             </div>
             <div className="mt-8 flex flex-wrap gap-2">
-              {["calendrier IA", "notes IA", "rappels IA", "parole vers notes", "parole vers calendrier", "parole vers rappels"].map((keyword) => (
+              {["AI calendar", "AI notes", "AI reminders", "speech to notes", "speech to calendar", "speech to reminders"].map((keyword) => (
                 <span className="mini-chip bg-white" key={keyword}>
                   {keyword}
                 </span>
@@ -151,14 +154,14 @@ export default function LandingPage() {
           <div className="panel p-4">
             <div className="grid gap-3">
               {[
-                ["Notes IA", Brain, "Capturez idees, fichiers et decisions dans une memoire consultable."],
-                ["Calendrier IA", CalendarClock, "Convertissez le contexte date en evenements utiles."],
-                ["Rappels IA", Bell, "Transformez les engagements en suivis contextuels."],
-                ["Capture vocale", Mic2, "Utilisez la parole pour creer notes, calendrier et rappels."],
-                ["Confidentialite", Lock, "Connectez-vous avec des donnees utilisateur protegees."],
-                ["Fichiers", Database, "Gardez les televersements lies a votre espace de travail."],
-                ["Abonnement", CreditCard, "La facturation et les abonnements sont pris en charge."],
-                ["Quebec", ShieldCheck, "Interface publique, confidentialite et conditions disponibles en francais."],
+                ["AI notes", Brain, "Capture ideas, files, and decisions into searchable memory."],
+                ["AI calendar", CalendarClock, "Convert dated context into useful events."],
+                ["AI reminders", Bell, "Turn commitments into contextual follow-ups."],
+                ["Voice capture", Mic2, "Use speech to create notes, calendar items, and reminders."],
+                ["Privacy", Lock, "Sign in with protected user data."],
+                ["Files", Database, "Keep uploads tied to your workspace."],
+                ["Subscription", CreditCard, "Billing and subscriptions are supported."],
+                ["Quebec", ShieldCheck, "Public pages, privacy policy, and terms are also available in French."],
               ].map(([title, Icon, copy]) => (
                 <div className="rounded-md border border-zinc-200 bg-white p-4" key={title as string}>
                   <div className="flex items-start gap-3">
@@ -178,17 +181,16 @@ export default function LandingPage() {
         <section className="border-t border-zinc-200 py-10">
           <div className="grid gap-8 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
             <div>
-              <p className="text-sm font-medium uppercase tracking-[0.16em] text-zinc-500">Prix de reference</p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-normal">Invitez chaque mois pour garder Pro a 10 $ CA.</h2>
+              <p className="text-sm font-medium uppercase tracking-[0.16em] text-zinc-500">Referral pricing</p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-normal">Invite monthly to keep Pro at CA$10.</h2>
               <p className="mt-4 text-sm leading-7 text-zinc-600">
-                Pro est a 15 $ CA/mois par defaut, avec facturation annuelle disponible dans Stripe Checkout. Le prix de reference
-                recompense la personne qui invite apres l&apos;inscription d&apos;un nouveau contact avec un code a usage unique.
+                Pro is CA$15/mo by default, with yearly billing available in Stripe Checkout. Referral pricing rewards the inviter after a new contact joins with a single-use code.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               {referralRules.map((rule, index) => (
                 <div className="rounded-md border border-zinc-200 bg-white p-4" key={rule}>
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-400">Regle {index + 1}</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-400">Rule {index + 1}</p>
                   <p className="mt-2 text-sm leading-6 text-zinc-700">{rule}</p>
                 </div>
               ))}
@@ -199,7 +201,7 @@ export default function LandingPage() {
           <div className="grid gap-8 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)]">
             <div>
               <p className="text-sm font-medium uppercase tracking-[0.16em] text-zinc-500">FAQ</p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-normal">Questions frequentes</h2>
+              <h2 className="mt-3 text-3xl font-semibold tracking-normal">Common questions</h2>
             </div>
             <div className="grid gap-3">
               {faqs.map(([question, answer]) => (
@@ -214,14 +216,14 @@ export default function LandingPage() {
         <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-200 py-5 text-sm text-zinc-500">
           <p>Spaxio Assistant</p>
           <div className="flex flex-wrap gap-4">
-            <Link className="hover:text-zinc-950" href="/fr/confidentialite" hrefLang="fr">
-              Politique de confidentialite
-            </Link>
-            <Link className="hover:text-zinc-950" href="/fr/conditions" hrefLang="fr">
-              Conditions d&apos;utilisation
-            </Link>
             <Link className="hover:text-zinc-950" href="/privacy" hrefLang="en">
-              English
+              Privacy Policy
+            </Link>
+            <Link className="hover:text-zinc-950" href="/terms" hrefLang="en">
+              Terms and Conditions
+            </Link>
+            <Link className="hover:text-zinc-950" href="/" hrefLang="fr">
+              Francais
             </Link>
           </div>
         </footer>
