@@ -8,8 +8,8 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
-      allow: ["/", "/en", "/privacy", "/terms", "/fr/confidentialite", "/fr/conditions"],
-      disallow: ["/app", "/api", "/auth", "/login", "/reset-password"],
+      allow: ["/", "/fr", "/privacy", "/terms", "/fr/confidentialite", "/fr/conditions"],
+      disallow: ["/app", "/api", "/auth", "/login", "/reset-password", "/fr/login", "/fr/reset-password"],
     },
     sitemap: `${siteUrl}/sitemap.xml`,
   };

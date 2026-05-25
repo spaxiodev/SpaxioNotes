@@ -257,3 +257,78 @@ export async function sendReferralDiscountEmail(to: string, details: ReferralDis
     html: referralDiscountHtml(details, language),
   });
 }
+
+export type InviteSignupEmail = {
+  referredEmail: string;
+  referredName: string | null;
+};
+
+const inviteSignupCopy = {
+  en: {
+    subject: (who: string) => `${who} just signed up with your Spaxio invite`,
+    headline: (who: string) => `${who} just signed up.`,
+    paragraph: (name: string | null, email: string) =>
+      name
+        ? `${name} (${email}) created a Spaxio Assistant account using your invite link.`
+        : `${email} created a Spaxio Assistant account using your invite link.`,
+    openCta: "Open Spaxio Assistant",
+  },
+  fr: {
+    subject: (who: string) => `${who} vient de s'inscrire avec votre invitation Spaxio`,
+    headline: (who: string) => `${who} vient de s'inscrire.`,
+    paragraph: (name: string | null, email: string) =>
+      name
+        ? `${name} (${email}) a cree un compte Spaxio Assistant a partir de votre lien d'invitation.`
+        : `${email} a cree un compte Spaxio Assistant a partir de votre lien d'invitation.`,
+    openCta: "Ouvrir Spaxio Assistant",
+  },
+} as const;
+
+function inviteSignupDisplayName(details: InviteSignupEmail) {
+  return details.referredName?.trim() || details.referredEmail;
+}
+
+function inviteSignupText(details: InviteSignupEmail, language: EmailLanguage) {
+  const copy = inviteSignupCopy[language];
+  const who = inviteSignupDisplayName(details);
+  return [
+    copy.headline(who),
+    "",
+    copy.paragraph(details.referredName, details.referredEmail),
+    "",
+    `${copy.openCta}: ${getSiteUrl()}/app`,
+  ].join("\n");
+}
+
+function inviteSignupHtml(details: InviteSignupEmail, language: EmailLanguage) {
+  const copy = inviteSignupCopy[language];
+  const who = inviteSignupDisplayName(details);
+  return [
+    "<div style=\"font-family:Arial,sans-serif;line-height:1.6;color:#18181b\">",
+    `<h1 style=\"font-size:20px;margin:0 0 16px\">${escapeHtml(copy.headline(who))}</h1>`,
+    `<p style=\"margin:0 0 20px\">${escapeHtml(copy.paragraph(details.referredName, details.referredEmail))}</p>`,
+    `<p style=\"margin:0\"><a href=\"${escapeHtml(`${getSiteUrl()}/app`)}\">${copy.openCta}</a></p>`,
+    "</div>",
+  ].join("");
+}
+
+export async function sendInviteSignupEmail(to: string, details: InviteSignupEmail, language: EmailLanguage = "en") {
+  const smtp = getSmtpConfig();
+  const transporter = nodemailer.createTransport({
+    host: smtp.host,
+    port: smtp.port,
+    secure: smtp.secure,
+    auth: {
+      user: smtp.user,
+      pass: smtp.pass,
+    },
+  });
+
+  await transporter.sendMail({
+    from: smtp.from,
+    to,
+    subject: inviteSignupCopy[language].subject(inviteSignupDisplayName(details)),
+    text: inviteSignupText(details, language),
+    html: inviteSignupHtml(details, language),
+  });
+}

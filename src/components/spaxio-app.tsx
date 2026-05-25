@@ -130,6 +130,7 @@ export type Reminder = {
   context: string;
   sourceMemoryId?: string;
   done: boolean;
+  remindAt?: string;
 };
 
 export type SettingsState = {
@@ -140,7 +141,10 @@ export type SettingsState = {
   aiMode: "local" | "api-ready";
   currentUserId: string;
   language: Language;
+  learnedFacts: string[];
 };
+
+const MAX_LEARNED_FACTS = 50;
 
 export type Collaborator = {
   id: string;
@@ -209,7 +213,7 @@ type AiMemoryPlan = Partial<Pick<Memory, "kind" | "title" | "body" | "summary" |
   recurringEvent?: AiRecurringEventPlan;
 };
 type AiTaskPlan = Partial<Pick<Task, "title" | "project" | "estimate" | "due">>;
-type AiReminderPlan = Partial<Pick<Reminder, "title" | "trigger" | "context">>;
+type AiReminderPlan = Partial<Pick<Reminder, "title" | "trigger" | "context" | "remindAt">>;
 type AiCalendarEventPlan = Partial<Pick<CalendarEvent, "title" | "startsAt" | "context">>;
 type AiCaptureItemPlan = {
   memory?: AiMemoryPlan;
@@ -225,6 +229,7 @@ type AiWorkspacePlan = {
   reminders?: AiReminderPlan[];
   calendarEvents?: AiCalendarEventPlan[];
   captureItems?: AiCaptureItemPlan[];
+  learnedAboutUser?: string[];
   query?: string;
   error?: string;
 };
@@ -466,6 +471,7 @@ const initialWorkspace: Workspace = {
     aiMode: "local",
     currentUserId: OWNER_ID,
     language: "en",
+    learnedFacts: [],
   },
 };
 
@@ -605,6 +611,19 @@ function formatAbsoluteDate(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+function formatReminderTriggerLabel(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  const now = new Date();
+  const sameDay =
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate();
+  const time = date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  if (sameDay) return `Today at ${time}`;
+  return `${date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} at ${time}`;
 }
 
 function formatRecurringEvent(event: RecurringEvent) {
@@ -1521,6 +1540,7 @@ export default function SpaxioApp({
   const [freeMinutes, setFreeMinutes] = useState(120);
   const [manualTask, setManualTask] = useState("");
   const [manualReminder, setManualReminder] = useState("");
+  const [manualReminderAt, setManualReminderAt] = useState("");
   const [selectedFolderId, setSelectedFolderId] = useState(DEFAULT_FOLDER_ID);
   const [inviteName, setInviteName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
@@ -1646,6 +1666,20 @@ export default function SpaxioApp({
   const personalReminders = useMemo(
     () => workspace.reminders.filter((reminder) => !reminder.sourceMemoryId || !memoryById.get(reminder.sourceMemoryId)?.folderId),
     [memoryById, workspace.reminders],
+  );
+  const [dueReminderNowMs, setDueReminderNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setDueReminderNowMs(Date.now()), 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+  const dueReminders = useMemo(
+    () =>
+      workspace.reminders.filter((reminder) => {
+        if (reminder.done || !reminder.remindAt) return false;
+        const at = new Date(reminder.remindAt).getTime();
+        return Number.isFinite(at) && at <= dueReminderNowMs;
+      }),
+    [dueReminderNowMs, workspace.reminders],
   );
   const folderTasks = useMemo(
     () => workspace.tasks.filter((task) => task.sourceMemoryId && memoryById.get(task.sourceMemoryId)?.folderId === selectedFolder?.id),
@@ -1888,6 +1922,8 @@ export default function SpaxioApp({
         workspace: scopedWorkspace,
         folderId: activeSharedFolder?.id,
         currentUserId: workspace.settings.currentUserId,
+        language: workspace.settings.language,
+        learnedFacts: workspace.settings.learnedFacts ?? [],
         userTime: userTimeContext(),
       }),
     });
@@ -1895,6 +1931,33 @@ export default function SpaxioApp({
 
     if (!response.ok) {
       throw new Error(data.error || "AI request failed.");
+    }
+
+    if (Array.isArray(data.learnedAboutUser) && data.learnedAboutUser.length) {
+      const incoming = data.learnedAboutUser
+        .filter((fact): fact is string => typeof fact === "string")
+        .map((fact) => fact.trim())
+        .filter((fact) => fact.length > 0 && fact.length <= 200);
+
+      if (incoming.length) {
+        setWorkspace((current) => {
+          const existing = current.settings.learnedFacts ?? [];
+          const seen = new Set(existing.map((fact) => fact.toLowerCase()));
+          const additions: string[] = [];
+          for (const fact of incoming) {
+            const key = fact.toLowerCase();
+            if (seen.has(key)) continue;
+            seen.add(key);
+            additions.push(fact);
+          }
+          if (!additions.length) return current;
+          const merged = [...additions, ...existing].slice(0, MAX_LEARNED_FACTS);
+          return {
+            ...current,
+            settings: { ...current.settings, learnedFacts: merged },
+          };
+        });
+      }
     }
 
     return data;
@@ -1932,14 +1995,26 @@ export default function SpaxioApp({
       const plannedReminders = (item.reminders ?? [])
         .filter((reminder): reminder is AiReminderPlan & { title: string } => typeof reminder.title === "string" && reminder.title.trim().length > 0)
         .slice(0, 5)
-        .map((reminder) => ({
-          id: uid("r"),
-          title: reminder.title.trim(),
-          trigger: typeof reminder.trigger === "string" && reminder.trigger.trim() ? reminder.trigger.trim() : "Contextual",
-          context: typeof reminder.context === "string" && reminder.context.trim() ? reminder.context.trim() : memory.summary,
-          sourceMemoryId: memory.id,
-          done: false,
-        }));
+        .map((reminder) => {
+          const remindAt =
+            typeof reminder.remindAt === "string" && !Number.isNaN(new Date(reminder.remindAt).getTime())
+              ? new Date(reminder.remindAt).toISOString()
+              : undefined;
+          return {
+            id: uid("r"),
+            title: reminder.title.trim(),
+            trigger:
+              typeof reminder.trigger === "string" && reminder.trigger.trim()
+                ? reminder.trigger.trim()
+                : remindAt
+                  ? formatReminderTriggerLabel(remindAt)
+                  : "Contextual",
+            context: typeof reminder.context === "string" && reminder.context.trim() ? reminder.context.trim() : memory.summary,
+            sourceMemoryId: memory.id,
+            done: false,
+            remindAt,
+          };
+        });
       const fallbackTasks =
         captureItems.length === 1 && !item.tasks?.length && !item.reminders?.length && !item.calendarEvents?.length
           ? tasksFromMemory(memory)
@@ -2209,20 +2284,25 @@ export default function SpaxioApp({
     event.preventDefault();
     if (!manualReminder.trim()) return;
 
+    const parsedRemindAt = manualReminderAt ? parseDateTimeLocalValue(manualReminderAt) : null;
+    const remindAt = parsedRemindAt && !Number.isNaN(parsedRemindAt.getTime()) ? parsedRemindAt.toISOString() : undefined;
+
     setWorkspace((current) => ({
       ...current,
       reminders: [
         {
           id: uid("r"),
           title: manualReminder.trim(),
-          trigger: "Contextual",
+          trigger: remindAt ? formatReminderTriggerLabel(remindAt) : "Contextual",
           context: "Created manually in Spaxio Assistant.",
           done: false,
+          remindAt,
         },
         ...current.reminders,
       ],
     }));
     setManualReminder("");
+    setManualReminderAt("");
   }
 
   async function emailReminder(reminder: Reminder) {
@@ -2683,6 +2763,56 @@ export default function SpaxioApp({
             {billingError && <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">{billingError}</p>}
             {uploadError && <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">{uploadError}</p>}
 
+            {dueReminders.length > 0 && (
+              <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                <div className="flex items-start gap-3">
+                  <AlarmClock className="mt-0.5 shrink-0 text-amber-700" size={18} aria-hidden="true" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold">
+                      {language === "fr"
+                        ? `${dueReminders.length} rappel${dueReminders.length === 1 ? "" : "s"} a traiter`
+                        : `${dueReminders.length} reminder${dueReminders.length === 1 ? "" : "s"} due`}
+                    </p>
+                    <ul className="mt-2 space-y-2">
+                      {dueReminders.slice(0, 4).map((reminder) => (
+                        <li key={reminder.id} className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate font-medium">{reminder.title}</p>
+                            <p className="truncate text-xs text-amber-800">
+                              {reminder.remindAt ? formatReminderTriggerLabel(reminder.remindAt) : reminder.trigger}
+                            </p>
+                          </div>
+                          <button
+                            className="shrink-0 rounded-md border border-amber-300 bg-white px-2 py-1 text-xs font-medium text-amber-900 hover:bg-amber-100"
+                            onClick={() =>
+                              setWorkspace((current) => ({
+                                ...current,
+                                reminders: current.reminders.map((item) =>
+                                  item.id === reminder.id ? { ...item, done: true } : item,
+                                ),
+                              }))
+                            }
+                            type="button"
+                          >
+                            {language === "fr" ? "Fait" : "Done"}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                    {dueReminders.length > 4 && (
+                      <button
+                        className="mt-2 text-xs font-medium underline"
+                        onClick={() => setActiveView("reminders")}
+                        type="button"
+                      >
+                        {language === "fr" ? "Voir tous les rappels" : "View all reminders"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             <input className="hidden" multiple onChange={addFiles} ref={fileInputRef} type="file" />
 
             {activeView === "dashboard" && (
@@ -2803,9 +2933,12 @@ export default function SpaxioApp({
             {activeView === "reminders" && (
               <RemindersView
                 manualReminder={manualReminder}
+                manualReminderAt={manualReminderAt}
+                nowMs={dueReminderNowMs}
                 onAddReminder={addManualReminder}
                 onEmailReminder={emailReminder}
                 onManualReminder={setManualReminder}
+                onManualReminderAt={setManualReminderAt}
                 onToggleReminder={(id) =>
                   setWorkspace((current) => ({
                     ...current,
@@ -4968,17 +5101,23 @@ function CollaborationView({
 
 function RemindersView({
   manualReminder,
+  manualReminderAt,
+  nowMs,
   onAddReminder,
   onEmailReminder,
   onManualReminder,
+  onManualReminderAt,
   onToggleReminder,
   reminderEmailStatus,
   reminders,
 }: {
   manualReminder: string;
+  manualReminderAt: string;
+  nowMs: number;
   onAddReminder: (event: FormEvent<HTMLFormElement>) => void;
   onEmailReminder: (reminder: Reminder) => void;
   onManualReminder: (value: string) => void;
+  onManualReminderAt: (value: string) => void;
   onToggleReminder: (id: string) => void;
   reminderEmailStatus: ReminderEmailStatus;
   reminders: Reminder[];
@@ -4988,14 +5127,25 @@ function RemindersView({
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="text-base font-semibold">Reminders</h2>
-          <p className="mt-1 text-sm text-zinc-500">Follow-ups from deadlines, classes, and plans.</p>
+          <p className="mt-1 text-sm text-zinc-500">
+            Follow-ups from deadlines, classes, and plans. Tell the AI when to remind you — e.g.{" "}
+            <span className="italic">remind me to call mom tomorrow at 5pm</span>.
+          </p>
         </div>
-        <form className="flex gap-2" onSubmit={onAddReminder}>
+        <form className="flex flex-wrap gap-2" onSubmit={onAddReminder}>
           <input
             className="h-10 min-w-0 rounded-md border border-zinc-200 px-3 text-sm outline-none focus:border-zinc-400"
             onChange={(event) => onManualReminder(event.target.value)}
             placeholder="Add reminder"
             value={manualReminder}
+          />
+          <input
+            aria-label="Remind me at"
+            className="h-10 rounded-md border border-zinc-200 px-2 text-sm outline-none focus:border-zinc-400"
+            onChange={(event) => onManualReminderAt(event.target.value)}
+            title="Remind me at (optional)"
+            type="datetime-local"
+            value={manualReminderAt}
           />
           <button className="icon-button" title="Add reminder" type="submit">
             <Plus size={17} aria-hidden="true" />
@@ -5016,11 +5166,18 @@ function RemindersView({
       <div className="mt-5 grid gap-3 md:grid-cols-2">
         {reminders.map((reminder) => {
           const isSending = reminderEmailStatus?.reminderId === reminder.id && reminderEmailStatus.state === "sending";
+          const remindAtDate = reminder.remindAt ? new Date(reminder.remindAt) : null;
+          const remindAtValid = remindAtDate && !Number.isNaN(remindAtDate.getTime()) ? remindAtDate : null;
+          const isOverdue = !reminder.done && remindAtValid !== null && remindAtValid.getTime() <= nowMs;
 
           return (
             <article
               className={`rounded-md border p-4 text-left ${
-                reminder.done ? "border-emerald-200 bg-emerald-50" : "border-zinc-200 bg-white hover:border-zinc-400"
+                reminder.done
+                  ? "border-emerald-200 bg-emerald-50"
+                  : isOverdue
+                    ? "border-amber-300 bg-amber-50 hover:border-amber-400"
+                    : "border-zinc-200 bg-white hover:border-zinc-400"
               }`}
               key={reminder.id}
             >
@@ -5039,7 +5196,10 @@ function RemindersView({
                 </button>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-medium">{reminder.title}</span>
-                  <span className="mt-1 block text-xs font-medium text-zinc-500">{reminder.trigger}</span>
+                  <span className={`mt-1 block text-xs font-medium ${isOverdue ? "text-amber-800" : "text-zinc-500"}`}>
+                    {remindAtValid ? formatReminderTriggerLabel(remindAtValid.toISOString()) : reminder.trigger}
+                    {isOverdue ? " · due" : ""}
+                  </span>
                   <span className="mt-2 block text-sm leading-6 text-zinc-600">{reminder.context}</span>
                 </span>
                 <button
@@ -5259,12 +5419,25 @@ function SettingsView({
       ? "Changez la langue visible dans l'application."
       : "Change the language shown in the app.",
     languageLabel: isFrench ? "Langue de l'application" : "App language",
+    learnedFactsTitle: isFrench ? "Ce que l'IA a appris sur vous" : "What the AI has learned about you",
+    learnedFactsHelp: isFrench
+      ? "L'IA ajoute ici les faits durables qu'elle remarque lors de vos echanges. Supprimez tout ce qui est faux ou que vous prefereriez qu'elle oublie."
+      : "The AI adds persistent facts here as it learns from your prompts. Remove anything wrong or that you'd rather it forget.",
+    learnedFactsEmpty: isFrench
+      ? "Rien pour l'instant. Parlez a l'IA et elle commencera a se souvenir de ce qui compte."
+      : "Nothing yet. Talk to the AI and it will start remembering what matters.",
+    learnedFactsRemove: isFrench ? "Oublier" : "Forget",
     localMode: isFrench ? "Mode local" : "Local inference",
     localModeDelete: isFrench ? "Le mode local efface seulement l'espace de travail de ce navigateur." : "Local mode clears this browser workspace only.",
     name: isFrench ? "Nom" : "Name",
     promoEmails: isFrench ? "Recevoir les courriels promotionnels" : "Receive promotion emails",
     settings: isFrench ? "Parametres" : "Settings",
     voiceCapture: isFrench ? "Capture vocale prioritaire" : "Voice-first capture",
+  };
+
+  const learnedFacts = settings.learnedFacts ?? [];
+  const forgetFact = (fact: string) => {
+    onSettings({ ...settings, learnedFacts: learnedFacts.filter((entry) => entry !== fact) });
   };
 
   const selectLanguage = (next: Language) => {
@@ -5372,6 +5545,35 @@ function SettingsView({
             value={settings.focusArea}
           />
         </label>
+        <div className="grid gap-2 rounded-md border border-zinc-200 p-3 text-sm">
+          <div>
+            <p className="font-medium">{text.learnedFactsTitle}</p>
+            <p className="mt-1 text-xs font-normal leading-5 text-zinc-500">{text.learnedFactsHelp}</p>
+          </div>
+          {learnedFacts.length === 0 ? (
+            <p className="rounded-md bg-zinc-50 px-3 py-2 text-xs text-zinc-500">{text.learnedFactsEmpty}</p>
+          ) : (
+            <ul className="grid gap-1">
+              {learnedFacts.map((fact) => (
+                <li
+                  key={fact}
+                  className="flex items-start justify-between gap-3 rounded-md border border-zinc-100 bg-zinc-50 px-3 py-2"
+                >
+                  <span className="text-sm leading-6 text-zinc-700">{fact}</span>
+                  <button
+                    aria-label={`${text.learnedFactsRemove}: ${fact}`}
+                    className="inline-flex h-7 shrink-0 items-center gap-1 rounded-md border border-zinc-200 bg-white px-2 text-xs font-medium text-zinc-600 transition hover:border-rose-200 hover:text-rose-600"
+                    onClick={() => forgetFact(fact)}
+                    type="button"
+                  >
+                    <X size={12} aria-hidden="true" />
+                    {text.learnedFactsRemove}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
         <label className="flex items-center justify-between rounded-md border border-zinc-200 p-3 text-sm font-medium">
           <span>
             {text.voiceCapture}

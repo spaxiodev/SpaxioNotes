@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import LegalPage from "@/components/legal-page";
+import { getSiteUrl } from "@/lib/url";
 
 export const metadata: Metadata = {
   title: "Terms and Conditions",
@@ -9,7 +10,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/terms",
     languages: {
+      en: "/terms",
       fr: "/fr/conditions",
+      "x-default": "/terms",
     },
   },
 };
@@ -113,14 +116,27 @@ const sections = [
 ];
 
 export default function TermsPage() {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: "Terms and Conditions",
+    url: `${getSiteUrl()}/terms`,
+    inLanguage: "en-CA",
+    isPartOf: { "@type": "WebSite", name: "Spaxio Assistant", url: getSiteUrl() },
+    description:
+      "Spaxio Assistant terms for AI notes, AI calendar, AI reminders, speech capture, subscriptions, cancellation, acceptable use, and Quebec consumer rights.",
+  };
   return (
-    <LegalPage
-      eyebrow="Terms"
-      intro="These terms set the rules for using Spaxio Assistant, including account access, subscriptions, AI features, speech capture, calendar and reminder tools, and content responsibilities."
-      languageLinks={[{ href: "/fr/conditions", hrefLang: "fr", label: "Francais" }]}
-      sections={sections}
-      title="Terms and Conditions"
-      updated="May 21, 2026"
-    />
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <LegalPage
+        eyebrow="Terms"
+        intro="These terms set the rules for using Spaxio Assistant, including account access, subscriptions, AI features, speech capture, calendar and reminder tools, and content responsibilities."
+        languageLinks={[{ href: "/fr/conditions", hrefLang: "fr", label: "Francais" }]}
+        sections={sections}
+        title="Terms and Conditions"
+        updated="May 21, 2026"
+      />
+    </>
   );
 }

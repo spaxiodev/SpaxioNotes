@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import LegalPage from "@/components/legal-page";
+import { getSiteUrl } from "@/lib/url";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
@@ -9,7 +10,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/privacy",
     languages: {
+      en: "/privacy",
       fr: "/fr/confidentialite",
+      "x-default": "/privacy",
     },
   },
 };
@@ -93,14 +96,27 @@ const sections = [
 ];
 
 export default function PrivacyPage() {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: "Privacy Policy",
+    url: `${getSiteUrl()}/privacy`,
+    inLanguage: "en-CA",
+    isPartOf: { "@type": "WebSite", name: "Spaxio Assistant", url: getSiteUrl() },
+    description:
+      "Spaxio Assistant privacy policy for AI notes, AI calendar, AI reminders, voice capture, account data, billing, and Quebec Law 25 transparency.",
+  };
   return (
-    <LegalPage
-      eyebrow="Privacy"
-      intro="This policy explains how Spaxio Assistant handles personal information for AI notes, speech capture, reminders, calendar planning, billing, and account management."
-      languageLinks={[{ href: "/fr/confidentialite", hrefLang: "fr", label: "Francais" }]}
-      sections={sections}
-      title="Privacy Policy"
-      updated="May 21, 2026"
-    />
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <LegalPage
+        eyebrow="Privacy"
+        intro="This policy explains how Spaxio Assistant handles personal information for AI notes, speech capture, reminders, calendar planning, billing, and account management."
+        languageLinks={[{ href: "/fr/confidentialite", hrefLang: "fr", label: "Francais" }]}
+        sections={sections}
+        title="Privacy Policy"
+        updated="May 21, 2026"
+      />
+    </>
   );
 }

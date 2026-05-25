@@ -4,6 +4,7 @@ import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
 type AiMode = "ask" | "capture";
+type AiLanguage = "en" | "fr";
 
 type AiRequest = {
   mode?: AiMode;
@@ -11,6 +12,8 @@ type AiRequest = {
   workspace?: Workspace;
   folderId?: string;
   currentUserId?: string;
+  language?: AiLanguage;
+  learnedFacts?: string[];
   userTime?: {
     localNow?: string;
     timeZone?: string;
@@ -77,6 +80,7 @@ function compactWorkspace(workspace: Workspace | undefined) {
       trigger: reminder.trigger,
       context: reminder.context,
       done: reminder.done,
+      remindAt: reminder.remindAt,
     })),
     calendarEvents: workspace.calendarEvents.slice(0, 40).map((event) => ({
       id: event.id,
@@ -100,7 +104,16 @@ function extractJson(text: string) {
   return JSON.parse(candidate.slice(first, last + 1)) as unknown;
 }
 
-function systemPrompt(mode: AiMode) {
+function systemPrompt(mode: AiMode, language: AiLanguage, learnedFacts: string[]) {
+  const languageLine =
+    language === "fr"
+      ? "Respond in French. All user-facing strings (answer, memory.title, memory.summary, memory.body, tasks[].title, reminders[].title, reminders[].trigger, reminders[].context, calendarEvents[].title, calendarEvents[].context, learnedAboutUser[]) must be written in natural French. Keep enum-like fields (memory.kind, memory.projects category slug, recurringEvent.frequency, recurringEvent.type) and ISO 8601 timestamps (reminders[].remindAt, calendarEvents[].startsAt) in their original form so the app can index them."
+      : "Respond in English.";
+  const learnedFactsLine = learnedFacts.length
+    ? `Known persistent facts about this user (already remembered — do not repeat them in learnedAboutUser):\n- ${learnedFacts.join("\n- ")}`
+    : "No persistent facts are remembered about this user yet.";
+  const learningLine =
+    "After processing the prompt, infer any NEW persistent personal facts about the user — stable preferences, routines, communication style, important people, places, dietary or accessibility needs, work/school context, recurring habits. Return them as short single-line strings (under 120 characters each) in learnedAboutUser. Only include facts that will still be true in a month. Do NOT include the current task, a one-off event, or anything already listed above. If nothing new is worth remembering, return an empty array. Write each fact in the user's chosen language.";
   const captureInstructions =
     mode === "capture"
       ? [
@@ -120,6 +133,9 @@ function systemPrompt(mode: AiMode) {
           "If the user mentions a recurring monthly subscription or bill, include memory.recurringEvent with frequency 'monthly', type 'subscription', name, dayOfMonth when known, and nextDate when known.",
           "Recurring yearly/monthly events should remain as named memory records, even when the immediate task is a one-time action.",
           "Use due labels like Today, Tomorrow, Friday, Next Wednesday, or This week for tasks.",
+          "When the user asks to be reminded at a specific time ('remind me at 5pm', 'remind me tomorrow morning', 'remind me in 2 hours', 'remind me next Monday'), set reminders[].remindAt to a full ISO 8601 timestamp resolved against userTime.localNow and userTime.timeZone, using the user's local UTC offset (e.g. -04:00) rather than a Z timestamp unless the user explicitly stated UTC.",
+          "If the user mentions a day but no clock time for the reminder, default remindAt to 09:00 in their local context.",
+          "Set reminders[].trigger to a short natural-language label that matches the resolved remindAt (e.g. 'Today at 5:00 PM', 'Tomorrow at 9:00 AM', 'Friday at 3:00 PM'). Omit remindAt when the reminder is purely contextual and not tied to a clock time.",
         ].join(" ")
       : "For ask mode, answer the user's question from the workspace. Do not create records unless the user explicitly asks to add something.";
 
@@ -127,10 +143,14 @@ function systemPrompt(mode: AiMode) {
     "You are the workspace intelligence layer for Spaxio Assistant, a memory, task, reminder, and calendar app.",
     "Use the provided workspace JSON as the source of truth.",
     "Return JSON only. No markdown, no prose outside JSON.",
+    languageLine,
+    learnedFactsLine,
+    learningLine,
     captureInstructions,
     "Response schema:",
     JSON.stringify({
       answer: "Short user-facing answer.",
+      learnedAboutUser: ["New persistent fact about the user inferred from this prompt"],
       memory: {
         kind: "note | document | deadline | voice | link | image",
         title: "Concise title",
@@ -153,7 +173,7 @@ function systemPrompt(mode: AiMode) {
         },
       },
       tasks: [{ title: "Task", project: "Project", estimate: 30, due: "Today" }],
-      reminders: [{ title: "Reminder", trigger: "When to remind", context: "Why it matters" }],
+      reminders: [{ title: "Reminder", trigger: "When to remind", context: "Why it matters", remindAt: "2026-05-25T17:00:00.000-04:00" }],
       calendarEvents: [{ title: "Calendar item", startsAt: "2026-05-21T13:00:00.000Z", context: "Reason" }],
       captureItems: [
         {
@@ -179,7 +199,7 @@ function systemPrompt(mode: AiMode) {
             },
           },
           tasks: [{ title: "Task", project: "Project", estimate: 30, due: "Today" }],
-          reminders: [{ title: "Reminder", trigger: "When to remind", context: "Why it matters" }],
+          reminders: [{ title: "Reminder", trigger: "When to remind", context: "Why it matters", remindAt: "2026-05-25T17:00:00.000-04:00" }],
           calendarEvents: [{ title: "Calendar item", startsAt: "2026-05-21T13:00:00.000Z", context: "Reason" }],
         },
       ],
@@ -225,6 +245,13 @@ export async function POST(request: Request) {
   }
 
   const workspace = compactWorkspace(body.workspace);
+  const language: AiLanguage = body.language === "fr" ? "fr" : "en";
+  const learnedFacts = Array.isArray(body.learnedFacts)
+    ? body.learnedFacts
+        .filter((fact): fact is string => typeof fact === "string" && fact.trim().length > 0)
+        .map((fact) => fact.trim().slice(0, 200))
+        .slice(0, 60)
+    : [];
   const fallbackNow = new Date().toISOString();
   const userTime = {
     localNow:
@@ -246,7 +273,7 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         model: MODEL,
         max_tokens: mode === "capture" ? 2400 : 900,
-        system: systemPrompt(mode),
+        system: systemPrompt(mode, language, learnedFacts),
         messages: [
           {
             role: "user",
@@ -254,6 +281,8 @@ export async function POST(request: Request) {
               today: userTime.localNow,
               userTime,
               mode,
+              language,
+              learnedFacts,
               prompt,
               folderId: body.folderId,
               currentUserId: body.currentUserId,

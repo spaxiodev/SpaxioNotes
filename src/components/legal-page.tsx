@@ -17,6 +17,8 @@ type LegalPageProps = {
   sections: Section[];
   languageLinks: Array<{ href: string; label: string; hrefLang: string }>;
   navLinks?: Array<{ href: string; label: string }>;
+  homeHref?: string;
+  tagline?: string;
 };
 
 export default function LegalPage({
@@ -31,16 +33,18 @@ export default function LegalPage({
   title,
   updated,
   updatedLabel = "Last updated",
+  homeHref = "/",
+  tagline = "AI memory workspace",
 }: LegalPageProps) {
   return (
     <main className="min-h-screen bg-[#f5f6f1] px-4 py-6 text-zinc-950 sm:px-6 lg:px-8">
       <article className="mx-auto max-w-4xl">
         <nav className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 pb-5">
-          <Link className="flex items-center gap-3" href="/">
+          <Link className="flex items-center gap-3" href={homeHref}>
             <BrandLogo className="border border-zinc-200" />
             <div>
-              <p className="text-lg font-semibold leading-none">Spaxio Assistant</p>
-              <p className="mt-1 text-xs text-zinc-500">AI memory workspace</p>
+              <p className="text-base font-semibold leading-none sm:text-lg">Spaxio Assistant</p>
+              <p className="mt-1 text-xs text-zinc-500">{tagline}</p>
             </div>
           </Link>
           <div className="flex flex-wrap items-center gap-3 text-sm font-medium text-zinc-600">
@@ -62,13 +66,13 @@ export default function LegalPage({
           </div>
         </nav>
 
-        <header className="py-10">
+        <header className="py-8 sm:py-10">
           <p className="text-sm font-medium uppercase tracking-[0.16em] text-zinc-500">{eyebrow}</p>
-          <h1 className="mt-4 text-4xl font-semibold tracking-normal sm:text-5xl">{title}</h1>
+          <h1 className="mt-4 text-3xl font-semibold tracking-normal sm:text-4xl lg:text-5xl">{title}</h1>
           <p className="mt-4 text-sm font-medium text-zinc-500">
             {updatedLabel}: {updated}
           </p>
-          <p className="mt-6 max-w-3xl text-lg leading-8 text-zinc-600">{intro}</p>
+          <p className="mt-6 max-w-3xl text-base leading-7 text-zinc-600 sm:text-lg sm:leading-8">{intro}</p>
         </header>
 
         <div className="grid gap-4 pb-12">

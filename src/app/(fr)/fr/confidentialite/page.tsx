@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import LegalPage from "@/components/legal-page";
+import { getSiteUrl } from "@/lib/url";
 
 export const metadata: Metadata = {
   title: "Politique de confidentialite",
@@ -10,6 +11,8 @@ export const metadata: Metadata = {
     canonical: "/fr/confidentialite",
     languages: {
       en: "/privacy",
+      fr: "/fr/confidentialite",
+      "x-default": "/privacy",
     },
   },
 };
@@ -108,19 +111,34 @@ const sections = [
 ];
 
 export default function ConfidentialitePage() {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: "Politique de confidentialite",
+    url: `${getSiteUrl()}/fr/confidentialite`,
+    inLanguage: "fr-CA",
+    isPartOf: { "@type": "WebSite", name: "Spaxio Assistant", url: getSiteUrl() },
+    description:
+      "Politique de confidentialite de Spaxio Assistant pour notes IA, calendrier IA, rappels IA, capture vocale, facturation et transparence au Quebec.",
+  };
   return (
-    <LegalPage
-      eyebrow="Confidentialite"
-      intro="Cette politique explique comment Spaxio Assistant traite les renseignements personnels pour les notes IA, la capture vocale, les rappels, le calendrier, la facturation et la gestion de compte."
-      languageLinks={[{ href: "/privacy", hrefLang: "en", label: "English" }]}
-      navLinks={[
-        { href: "/fr/confidentialite", label: "Confidentialite" },
-        { href: "/fr/conditions", label: "Conditions" },
-      ]}
-      sections={sections}
-      title="Politique de confidentialite"
-      updated="24 mai 2026"
-      updatedLabel="Derniere mise a jour"
-    />
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <LegalPage
+        eyebrow="Confidentialite"
+        homeHref="/fr"
+        intro="Cette politique explique comment Spaxio Assistant traite les renseignements personnels pour les notes IA, la capture vocale, les rappels, le calendrier, la facturation et la gestion de compte."
+        languageLinks={[{ href: "/privacy", hrefLang: "en", label: "English" }]}
+        navLinks={[
+          { href: "/fr/confidentialite", label: "Confidentialite" },
+          { href: "/fr/conditions", label: "Conditions" },
+        ]}
+        sections={sections}
+        tagline="Espace de travail IA"
+        title="Politique de confidentialite"
+        updated="24 mai 2026"
+        updatedLabel="Derniere mise a jour"
+      />
+    </>
   );
 }

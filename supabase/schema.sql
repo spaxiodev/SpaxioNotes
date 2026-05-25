@@ -100,8 +100,23 @@ create table if not exists public.reminders (
   context text not null,
   source_memory_id uuid,
   done boolean not null default false,
+  remind_at timestamptz,
   created_at timestamptz not null default now()
 );
+
+alter table public.reminders add column if not exists remind_at timestamptz;
+
+-- Tracks reminder emails already dispatched by the cron job. Reminders live in
+-- workspace_states.state JSON keyed by the client-generated reminder id, so this
+-- table is keyed on (user_id, reminder_id) to dedupe across cron runs.
+create table if not exists public.reminder_dispatches (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  reminder_id text not null,
+  sent_at timestamptz not null default now(),
+  primary key (user_id, reminder_id)
+);
+
+alter table public.reminder_dispatches enable row level security;
 
 create table if not exists public.promotions (
   id uuid primary key default gen_random_uuid(),

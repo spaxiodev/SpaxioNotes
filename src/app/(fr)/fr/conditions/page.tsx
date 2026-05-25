@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import LegalPage from "@/components/legal-page";
+import { getSiteUrl } from "@/lib/url";
 
 export const metadata: Metadata = {
   title: "Conditions d'utilisation",
@@ -10,6 +11,8 @@ export const metadata: Metadata = {
     canonical: "/fr/conditions",
     languages: {
       en: "/terms",
+      fr: "/fr/conditions",
+      "x-default": "/terms",
     },
   },
 };
@@ -120,19 +123,34 @@ const sections = [
 ];
 
 export default function ConditionsPage() {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: "Conditions d'utilisation",
+    url: `${getSiteUrl()}/fr/conditions`,
+    inLanguage: "fr-CA",
+    isPartOf: { "@type": "WebSite", name: "Spaxio Assistant", url: getSiteUrl() },
+    description:
+      "Conditions de Spaxio Assistant pour notes IA, calendrier IA, rappels IA, capture vocale, abonnements, annulation et droits des consommateurs du Quebec.",
+  };
   return (
-    <LegalPage
-      eyebrow="Conditions"
-      intro="Ces conditions expliquent les regles d'utilisation de Spaxio Assistant, y compris les comptes, abonnements, fonctions IA, capture vocale, calendriers, rappels et responsabilites liees au contenu."
-      languageLinks={[{ href: "/terms", hrefLang: "en", label: "English" }]}
-      navLinks={[
-        { href: "/fr/confidentialite", label: "Confidentialite" },
-        { href: "/fr/conditions", label: "Conditions" },
-      ]}
-      sections={sections}
-      title="Conditions d'utilisation"
-      updated="24 mai 2026"
-      updatedLabel="Derniere mise a jour"
-    />
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <LegalPage
+        eyebrow="Conditions"
+        homeHref="/fr"
+        intro="Ces conditions expliquent les regles d'utilisation de Spaxio Assistant, y compris les comptes, abonnements, fonctions IA, capture vocale, calendriers, rappels et responsabilites liees au contenu."
+        languageLinks={[{ href: "/terms", hrefLang: "en", label: "English" }]}
+        navLinks={[
+          { href: "/fr/confidentialite", label: "Confidentialite" },
+          { href: "/fr/conditions", label: "Conditions" },
+        ]}
+        sections={sections}
+        tagline="Espace de travail IA"
+        title="Conditions d'utilisation"
+        updated="24 mai 2026"
+        updatedLabel="Derniere mise a jour"
+      />
+    </>
   );
 }

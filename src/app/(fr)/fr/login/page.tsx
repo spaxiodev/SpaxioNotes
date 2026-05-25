@@ -1,11 +1,15 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Lock } from "lucide-react";
 
 import { BrandLogo } from "@/components/brand-logo";
+import { login, resetPassword, signup } from "@/lib/auth-actions";
 
-import { login, resetPassword, signup } from "./actions";
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
-export default async function LoginPage({
+export default async function LoginPageFr({
   searchParams,
 }: {
   searchParams: Promise<{ invite?: string; message?: string; next?: string }>;
@@ -13,10 +17,10 @@ export default async function LoginPage({
   const params = await searchParams;
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#f5f6f1] px-4 py-8 text-zinc-950">
+    <main className="flex min-h-screen items-center justify-center bg-[#f5f6f1] px-4 py-6 text-zinc-950 sm:py-8">
       <section className="grid w-full max-w-5xl overflow-hidden border border-zinc-200 bg-white shadow-sm lg:grid-cols-[minmax(0,1fr)_420px]">
         <div className="hidden bg-zinc-950 p-8 text-white lg:block">
-          <Link className="flex items-center gap-3" href="/">
+          <Link className="flex items-center gap-3" href="/fr">
             <BrandLogo />
             <div>
               <p className="text-lg font-semibold leading-none">Spaxio Assistant</p>
@@ -34,17 +38,26 @@ export default async function LoginPage({
         </div>
 
         <div className="p-5 sm:p-8">
-          <div className="flex items-center gap-3 lg:hidden">
-            <BrandLogo className="border border-zinc-200" />
-            <div>
-              <p className="text-lg font-semibold leading-none">Spaxio Assistant</p>
-              <p className="mt-1 text-xs text-zinc-500">Espace de travail IA</p>
-            </div>
+          <div className="flex items-center justify-between gap-3 lg:hidden">
+            <Link className="flex items-center gap-3" href="/fr">
+              <BrandLogo className="border border-zinc-200" />
+              <div>
+                <p className="text-base font-semibold leading-none sm:text-lg">Spaxio Assistant</p>
+                <p className="mt-1 text-xs text-zinc-500">Espace de travail IA</p>
+              </div>
+            </Link>
+            <Link
+              className="inline-flex h-8 items-center justify-center rounded-sm border border-zinc-200 px-3 text-xs font-medium text-zinc-600 hover:bg-zinc-50"
+              href={`/login${params.invite ? `?invite=${encodeURIComponent(params.invite)}` : ""}`}
+              hrefLang="en"
+            >
+              EN
+            </Link>
           </div>
 
-          <div className="mt-8 flex items-center gap-2">
+          <div className="mt-6 flex items-center gap-2 sm:mt-8">
             <Lock size={18} aria-hidden="true" />
-            <h1 className="text-xl font-semibold">Connexion ou creation de compte</h1>
+            <h1 className="text-lg font-semibold sm:text-xl">Connexion ou creation de compte</h1>
           </div>
 
           {params.message && (
@@ -61,10 +74,13 @@ export default async function LoginPage({
           <form className="mt-5 grid gap-4">
             <input name="next" type="hidden" value={params.next ?? "/app"} />
             <input name="invite" type="hidden" value={params.invite ?? ""} />
+            <input name="locale" type="hidden" value="fr" />
             <label className="grid gap-2 text-sm font-medium">
               Courriel
               <input
-                className="h-11 rounded-md border border-zinc-200 px-3 text-sm outline-none focus:border-zinc-400"
+                autoComplete="email"
+                className="h-11 w-full rounded-md border border-zinc-200 px-3 text-base outline-none focus:border-zinc-400 sm:text-sm"
+                inputMode="email"
                 name="email"
                 placeholder="vous@exemple.com"
                 required
@@ -74,7 +90,8 @@ export default async function LoginPage({
             <label className="grid gap-2 text-sm font-medium">
               Mot de passe
               <input
-                className="h-11 rounded-md border border-zinc-200 px-3 text-sm outline-none focus:border-zinc-400"
+                autoComplete="current-password"
+                className="h-11 w-full rounded-md border border-zinc-200 px-3 text-base outline-none focus:border-zinc-400 sm:text-sm"
                 minLength={8}
                 name="password"
                 placeholder="Au moins 8 caracteres"
@@ -82,13 +99,41 @@ export default async function LoginPage({
                 type="password"
               />
             </label>
-            <div className="grid gap-2 sm:grid-cols-2">
-              <button className="primary-button" formAction={login} formNoValidate>
-                Connexion
-              </button>
-              <button className="inline-flex h-10 items-center justify-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-medium text-zinc-700" formAction={signup}>
-                Creer un compte
-              </button>
+            <button className="primary-button w-full justify-center" formAction={login} formNoValidate>
+              Connexion
+            </button>
+
+            <div className="mt-2 border-t border-zinc-200 pt-4">
+              <p className="text-sm font-medium text-zinc-700">Nouveau ? Creez un compte</p>
+              <div className="mt-3 grid gap-4">
+                <label className="grid gap-2 text-sm font-medium">
+                  Nom complet
+                  <input
+                    autoComplete="name"
+                    className="h-11 w-full rounded-md border border-zinc-200 px-3 text-base outline-none focus:border-zinc-400 sm:text-sm"
+                    name="fullName"
+                    placeholder="Jeanne Tremblay"
+                    type="text"
+                  />
+                </label>
+                <label className="grid gap-2 text-sm font-medium">
+                  Confirmer le mot de passe
+                  <input
+                    autoComplete="new-password"
+                    className="h-11 w-full rounded-md border border-zinc-200 px-3 text-base outline-none focus:border-zinc-400 sm:text-sm"
+                    minLength={8}
+                    name="confirmPassword"
+                    placeholder="Saisir le mot de passe a nouveau"
+                    type="password"
+                  />
+                </label>
+                <button
+                  className="inline-flex h-10 w-full items-center justify-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-medium text-zinc-700"
+                  formAction={signup}
+                >
+                  Creer un compte
+                </button>
+              </div>
             </div>
             <label className="flex items-start gap-2 text-xs leading-5 text-zinc-500">
               <input className="mt-1 size-4 rounded border-zinc-300" name="legalAccepted" required type="checkbox" value="yes" />
@@ -105,7 +150,7 @@ export default async function LoginPage({
               </span>
             </label>
             <button
-              className="inline-flex h-10 items-center justify-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-medium text-zinc-700"
+              className="inline-flex h-10 w-full items-center justify-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-medium text-zinc-700"
               formAction={resetPassword}
               formNoValidate
             >

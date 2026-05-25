@@ -7,16 +7,17 @@ import { getSiteUrl } from "@/lib/url";
 
 export const metadata: Metadata = {
   alternates: {
-    canonical: "/",
+    canonical: "/fr",
     languages: {
-      en: "/en",
-      fr: "/",
+      en: "/",
+      fr: "/fr",
+      "x-default": "/",
     },
   },
 };
 
-export default function LandingPage() {
-  const siteUrl = getSiteUrl();
+export default function FrenchLandingPage() {
+  const siteUrl = `${getSiteUrl()}/fr`;
   const referralRules = [
     "Chaque code d'invitation peut etre utilise par une seule nouvelle personne.",
     "Quand votre contact s'inscrit, votre code est marque comme utilise et un nouveau lien d'invitation est genere.",
@@ -85,53 +86,53 @@ export default function LandingPage() {
   return (
     <main className="min-h-screen bg-[#f5f6f1] text-zinc-950">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema) }} />
-      <section className="flex min-h-screen w-full flex-col px-4 py-6 sm:px-6 lg:px-10">
-        <nav className="flex items-center justify-between border-b border-zinc-200 pb-5">
-          <div className="flex items-center gap-3">
+      <section className="flex min-h-screen w-full flex-col px-4 py-5 sm:px-6 sm:py-6 lg:px-10">
+        <nav className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 pb-4 sm:pb-5">
+          <Link className="flex items-center gap-3" href="/fr">
             <BrandLogo className="border border-zinc-200" />
             <div>
-              <p className="text-lg font-semibold leading-none">Spaxio Assistant</p>
+              <p className="text-base font-semibold leading-none sm:text-lg">Spaxio Assistant</p>
               <p className="mt-1 text-xs text-zinc-500">Espace de travail IA</p>
             </div>
-          </div>
-          <div className="flex items-center gap-3">
+          </Link>
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <Link className="hidden text-sm font-medium text-zinc-600 hover:text-zinc-950 md:inline" href="/fr/confidentialite">
               Confidentialite
             </Link>
             <Link className="hidden text-sm font-medium text-zinc-600 hover:text-zinc-950 md:inline" href="/fr/conditions">
               Conditions
             </Link>
-            <div aria-label="Changer de langue" className="flex h-10 items-center rounded-md border border-zinc-200 bg-white p-1">
-              <span className="inline-flex h-8 items-center justify-center rounded-sm bg-zinc-950 px-3 text-sm font-medium text-white">
+            <div aria-label="Changer de langue" className="flex h-9 items-center rounded-md border border-zinc-200 bg-white p-1 sm:h-10">
+              <span className="inline-flex h-7 items-center justify-center rounded-sm bg-zinc-950 px-2.5 text-xs font-medium text-white sm:h-8 sm:px-3 sm:text-sm">
                 FR
               </span>
               <Link
-                className="inline-flex h-8 items-center justify-center rounded-sm px-3 text-sm font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950"
-                href="/en"
+                className="inline-flex h-7 items-center justify-center rounded-sm px-2.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950 sm:h-8 sm:px-3 sm:text-sm"
+                href="/"
                 hrefLang="en"
               >
                 EN
               </Link>
             </div>
-            <Link className="primary-button" href="/login">
+            <Link className="primary-button" href="/fr/login">
               Connexion
               <ArrowRight size={17} aria-hidden="true" />
             </Link>
           </div>
         </nav>
 
-        <div className="grid flex-1 gap-10 py-12 lg:grid-cols-[minmax(0,1fr)_460px]">
+        <div className="grid flex-1 gap-8 py-8 sm:gap-10 sm:py-12 lg:grid-cols-[minmax(0,1fr)_460px]">
           <div>
             <p className="text-sm font-medium uppercase tracking-[0.16em] text-zinc-500">Espace de travail IA</p>
-            <h1 className="mt-4 text-4xl font-semibold tracking-normal sm:text-5xl lg:text-6xl xl:text-7xl">
+            <h1 className="mt-4 text-3xl font-semibold tracking-normal sm:text-5xl lg:text-6xl xl:text-7xl">
               Notes IA, calendrier et rappels a partir de votre contexte quotidien.
             </h1>
-            <p className="mt-5 text-lg leading-8 text-zinc-600 lg:text-xl">
+            <p className="mt-5 text-base leading-7 text-zinc-600 sm:text-lg sm:leading-8 lg:text-xl">
               Spaxio Assistant transforme vos notes ecrites et votre voix en memoire consultable, taches, evenements de calendrier et
               rappels pour les etudes, le travail client et la planification personnelle.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
-              <Link className="primary-button" href="/login">
+              <Link className="primary-button" href="/fr/login">
                 Commencer
                 <ArrowRight size={17} aria-hidden="true" />
               </Link>
@@ -175,11 +176,11 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-        <section className="border-t border-zinc-200 py-10">
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
+        <section className="border-t border-zinc-200 py-8 sm:py-10">
+          <div className="grid gap-6 sm:gap-8 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
             <div>
               <p className="text-sm font-medium uppercase tracking-[0.16em] text-zinc-500">Prix de reference</p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-normal">Invitez chaque mois pour garder Pro a 10 $ CA.</h2>
+              <h2 className="mt-3 text-2xl font-semibold tracking-normal sm:text-3xl">Invitez chaque mois pour garder Pro a 10 $ CA.</h2>
               <p className="mt-4 text-sm leading-7 text-zinc-600">
                 Pro est a 15 $ CA/mois par defaut, avec facturation annuelle disponible dans Stripe Checkout. Le prix de reference
                 recompense la personne qui invite apres l&apos;inscription d&apos;un nouveau contact avec un code a usage unique.
@@ -195,11 +196,11 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
-        <section className="border-t border-zinc-200 py-10">
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)]">
+        <section className="border-t border-zinc-200 py-8 sm:py-10">
+          <div className="grid gap-6 sm:gap-8 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)]">
             <div>
               <p className="text-sm font-medium uppercase tracking-[0.16em] text-zinc-500">FAQ</p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-normal">Questions frequentes</h2>
+              <h2 className="mt-3 text-2xl font-semibold tracking-normal sm:text-3xl">Questions frequentes</h2>
             </div>
             <div className="grid gap-3">
               {faqs.map(([question, answer]) => (
@@ -220,7 +221,7 @@ export default function LandingPage() {
             <Link className="hover:text-zinc-950" href="/fr/conditions" hrefLang="fr">
               Conditions d&apos;utilisation
             </Link>
-            <Link className="hover:text-zinc-950" href="/privacy" hrefLang="en">
+            <Link className="hover:text-zinc-950" href="/" hrefLang="en">
               English
             </Link>
           </div>
