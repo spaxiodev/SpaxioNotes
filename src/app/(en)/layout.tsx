@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
+import { MetaPixel } from "@/components/meta-pixel";
 import { PrivacyConsent } from "@/components/privacy-consent";
 import { getSiteUrl } from "@/lib/url";
 
@@ -92,6 +93,7 @@ export default function EnglishRootLayout({
     >
       <body className="min-h-full flex flex-col">
         {children}
+        <MetaPixel />
         <PrivacyConsent />
       </body>
     </html>
