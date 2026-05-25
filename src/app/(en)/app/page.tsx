@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import SpaxioApp, { type Promotion, type Workspace } from "@/components/spaxio-app";
 import { isAdminUser } from "@/lib/admin";
+import { isActiveSubscriptionStatus } from "@/lib/billing";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import { hasActiveReferralDiscount } from "@/lib/stripe-referrals";
@@ -116,7 +117,7 @@ export default async function AppPage() {
 
   const initialWorkspace = withAuthenticatedUser(workspaceState?.state ?? undefined, user, profile ?? null);
   const adminUser = isAdminUser(user.id);
-  const plan = adminUser || (profile?.plan === "pro" && ["active", "trialing"].includes(profile.subscription_status ?? "")) ? "pro" : "free";
+  const plan = adminUser || (profile?.plan === "pro" && isActiveSubscriptionStatus(profile.subscription_status)) ? "pro" : "free";
   const referralDiscountEligible = hasActiveReferralDiscount(profile ?? {});
 
   const readIds = new Set((promotionReadRows ?? []).map((row) => row.promotion_id));

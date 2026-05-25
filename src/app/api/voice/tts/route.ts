@@ -1,4 +1,6 @@
 import { jsonError } from "@/lib/http";
+import { hasProEntitlement } from "@/lib/billing";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
@@ -23,6 +25,17 @@ export async function POST(request: Request) {
 
     if (!user) {
       return jsonError("Unauthorized.", 401);
+    }
+
+    const admin = createAdminClient();
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("plan, subscription_status")
+      .eq("id", user.id)
+      .maybeSingle<{ plan: string | null; subscription_status: string | null }>();
+
+    if (!hasProEntitlement(profile)) {
+      return jsonError("Voice playback requires an active Pro subscription.", 403);
     }
   }
 
@@ -72,7 +85,7 @@ export async function POST(request: Request) {
   }
 
   if (!response.ok) {
-    return jsonError("Voice request failed.", response.status);
+    return jsonError("Voice request failed.", response.status === 429 ? 429 : 502);
   }
 
   return new Response(response.body, {

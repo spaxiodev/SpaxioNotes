@@ -167,6 +167,51 @@ begin
 end;
 $$;
 
+create or replace function public.protect_profile_client_managed_columns()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  request_role text := coalesce(nullif(current_setting('request.jwt.claim.role', true), ''), auth.role());
+begin
+  if request_role = 'authenticated' then
+    if tg_op = 'INSERT' then
+      new.plan = 'free';
+      new.subscription_status = 'inactive';
+      new.stripe_customer_id = null;
+      new.stripe_subscription_id = null;
+      new.invite_code = encode(gen_random_bytes(8), 'hex');
+      new.referred_by_user_id = null;
+      new.referral_discount_eligible = false;
+      new.referral_discount_activated_at = null;
+      new.referral_discount_expires_at = null;
+      new.promotion_email_token = encode(gen_random_bytes(24), 'hex');
+    elsif tg_op = 'UPDATE' then
+      new.plan = old.plan;
+      new.subscription_status = old.subscription_status;
+      new.stripe_customer_id = old.stripe_customer_id;
+      new.stripe_subscription_id = old.stripe_subscription_id;
+      new.invite_code = old.invite_code;
+      new.referred_by_user_id = old.referred_by_user_id;
+      new.referral_discount_eligible = old.referral_discount_eligible;
+      new.referral_discount_activated_at = old.referral_discount_activated_at;
+      new.referral_discount_expires_at = old.referral_discount_expires_at;
+      new.promotion_email_token = old.promotion_email_token;
+      new.created_at = old.created_at;
+    end if;
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists protect_profile_client_managed_columns on public.profiles;
+create trigger protect_profile_client_managed_columns
+before insert or update on public.profiles
+for each row execute function public.protect_profile_client_managed_columns();
+
 drop trigger if exists touch_profiles_updated_at on public.profiles;
 create trigger touch_profiles_updated_at
 before update on public.profiles

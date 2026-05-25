@@ -1,4 +1,5 @@
 import { jsonError, jsonOk } from "@/lib/http";
+import { isManageableSubscriptionStatus } from "@/lib/billing";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getSiteUrl, getStripe } from "@/lib/stripe";
@@ -76,6 +77,22 @@ export async function POST(request: Request) {
       customerId = customer.id;
 
       await admin.from("profiles").update({ stripe_customer_id: customerId }).eq("id", user.id);
+    } else {
+      const subscriptions = await stripe.subscriptions.list({
+        customer: customerId,
+        limit: 10,
+        status: "all",
+      });
+      const manageableSubscription = subscriptions.data.find((subscription) => isManageableSubscriptionStatus(subscription.status));
+
+      if (manageableSubscription) {
+        const portalSession = await stripe.billingPortal.sessions.create({
+          customer: customerId,
+          return_url: `${siteUrl}/app`,
+        });
+
+        return jsonOk({ url: portalSession.url });
+      }
     }
 
     const session = await stripe.checkout.sessions.create({

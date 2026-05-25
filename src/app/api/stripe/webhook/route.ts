@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import Stripe from "stripe";
 
 import { jsonError, jsonOk } from "@/lib/http";
+import { isActiveSubscriptionStatus } from "@/lib/billing";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe";
 import { applyReferralPriceToSubscription, applyStandardPriceToSubscription, hasActiveReferralDiscount } from "@/lib/stripe-referrals";
@@ -10,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 async function updateSubscription(customerId: string, subscription: Stripe.Subscription | null) {
   const admin = createAdminClient();
-  const plan = subscription && ["active", "trialing"].includes(subscription.status) ? "pro" : "free";
+  const plan = subscription && isActiveSubscriptionStatus(subscription.status) ? "pro" : "free";
 
   const { data: profile } = await admin
     .from("profiles")
@@ -31,11 +32,19 @@ async function updateSubscription(customerId: string, subscription: Stripe.Subsc
     })
     .eq("stripe_customer_id", customerId);
 
-  if (subscription && ["active", "trialing"].includes(subscription.status)) {
-    if (referralDiscountActive) {
-      await applyReferralPriceToSubscription(subscription.id);
-    } else {
-      await applyStandardPriceToSubscription(subscription.id);
+  if (subscription && isActiveSubscriptionStatus(subscription.status)) {
+    try {
+      if (referralDiscountActive) {
+        await applyReferralPriceToSubscription(subscription.id);
+      } else {
+        await applyStandardPriceToSubscription(subscription.id);
+      }
+    } catch (error) {
+      console.error("Could not sync Stripe subscription price", {
+        customerId,
+        subscriptionId: subscription.id,
+        error,
+      });
     }
   }
 }

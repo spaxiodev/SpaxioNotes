@@ -319,7 +319,10 @@ export async function POST(request: Request) {
     return jsonError("AI returned an invalid response.", 502);
   }
 
-  if (!anthropicResponse.ok) return jsonError("AI request failed.", anthropicResponse.status);
+  if (!anthropicResponse.ok) {
+    const status = anthropicResponse.status === 429 ? 429 : 502;
+    return jsonError(data.error?.message ? "AI provider rejected the request." : "AI request failed.", status);
+  }
 
   const text = data.content?.find((block): block is AnthropicTextBlock => block.type === "text")?.text;
   if (!text) {

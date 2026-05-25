@@ -137,8 +137,13 @@ export async function signup(formData: FormData) {
   const password = getString(formData, "password");
   const confirmPassword = getString(formData, "confirmPassword");
   const fullName = getString(formData, "fullName").trim();
-  const inviteCode = normalizeInviteCode(getString(formData, "invite"));
+  const rawInviteCode = getString(formData, "invite").trim();
+  const inviteCode = normalizeInviteCode(rawInviteCode);
   const legalAccepted = getString(formData, "legalAccepted") === "yes";
+
+  if (rawInviteCode && !inviteCode) {
+    redirectToLogin(locale, messages.inviteInvalid);
+  }
 
   if (!legalAccepted) {
     redirectToLogin(locale, messages.legalRequired, inviteCode);
@@ -227,6 +232,7 @@ export async function signup(formData: FormData) {
         .maybeSingle<{ id: string }>();
 
       if (!activatedInviter) {
+        await admin.auth.admin.deleteUser(data.user.id);
         redirectToLogin(locale, messages.inviteUsed);
       }
 

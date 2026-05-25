@@ -40,6 +40,7 @@ import { ChangeEvent, ElementType, FormEvent, useEffect, useMemo, useRef, useSta
 
 import { BrandLogo } from "@/components/brand-logo";
 import { createClient } from "@/lib/supabase/client";
+import { readJsonResponse } from "@/lib/client-response";
 
 type View = "dashboard" | "memory" | "planner" | "calendar" | "collaboration" | "reminders" | "billing" | "settings";
 type Language = "en" | "fr";
@@ -1933,7 +1934,7 @@ export default function SpaxioApp({
         userTime: userTimeContext(),
       }),
     });
-    const data = (await response.json()) as AiWorkspacePlan;
+    const data = await readJsonResponse<AiWorkspacePlan>(response);
 
     if (!response.ok) {
       throw new Error(data.error || "AI request failed.");
@@ -2323,7 +2324,7 @@ export default function SpaxioApp({
           reminder,
         }),
       });
-      const data = (await response.json()) as { error?: string };
+      const data = await readJsonResponse<{ error?: string }>(response);
 
       if (!response.ok) {
         setReminderEmailStatus({
@@ -2493,12 +2494,13 @@ export default function SpaxioApp({
     try {
       const response = await fetch("/api/stripe/checkout", {
         method: "POST",
+        credentials: "same-origin",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ billingInterval }),
       });
-      const data = (await response.json()) as { url?: string; error?: string };
+      const data = await readJsonResponse<{ url?: string; error?: string }>(response);
 
       if (data.url) {
         window.location.href = data.url;
@@ -2514,8 +2516,8 @@ export default function SpaxioApp({
     setBillingError("");
 
     try {
-      const response = await fetch("/api/stripe/portal", { method: "POST" });
-      const data = (await response.json()) as { url?: string; error?: string };
+      const response = await fetch("/api/stripe/portal", { method: "POST", credentials: "same-origin" });
+      const data = await readJsonResponse<{ url?: string; error?: string }>(response);
 
       if (data.url) {
         window.location.href = data.url;
@@ -2556,7 +2558,7 @@ export default function SpaxioApp({
 
     try {
       const response = await fetch("/api/account", { method: "DELETE" });
-      const data = (await response.json()) as { deleted?: boolean; error?: string };
+      const data = await readJsonResponse<{ deleted?: boolean; error?: string }>(response);
 
       if (!response.ok || !data.deleted) {
         setBillingError(data.error ?? "Could not delete account.");
@@ -2602,7 +2604,7 @@ export default function SpaxioApp({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      const data = (await response.json()) as { message?: string; error?: string };
+      const data = await readJsonResponse<{ message?: string; error?: string }>(response);
 
       if (!response.ok) {
         setAccountEmailStatus({ state: "error", message: data.error ?? "Could not start email change." });
@@ -2632,7 +2634,7 @@ export default function SpaxioApp({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ optOut }),
       });
-      const data = (await response.json()) as { promotionEmailsOptOut?: boolean; error?: string };
+      const data = await readJsonResponse<{ promotionEmailsOptOut?: boolean; error?: string }>(response);
 
       if (!response.ok) {
         setPromotionEmailsOptOut(previous);
