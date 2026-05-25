@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
-import { MetaPixel } from "@/components/meta-pixel";
+import { MetaPixel, META_PIXEL_SCRIPT } from "@/components/meta-pixel";
 import { PrivacyConsent } from "@/components/privacy-consent";
 import { getSiteUrl } from "@/lib/url";
 
@@ -91,6 +91,13 @@ export default function EnglishRootLayout({
       lang="en-CA"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: META_PIXEL_SCRIPT,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">
         {children}
         <MetaPixel />
