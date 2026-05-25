@@ -1912,10 +1912,16 @@ export default function SpaxioApp({
       reminders: scopedReminders,
       calendarEvents: activeSharedFolder ? folderEvents : workspace.calendarEvents,
     };
+    const { data: sessionData } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
+    const accessToken = sessionData.session?.access_token;
 
     const response = await fetch("/api/ai/workspace", {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      credentials: "same-origin",
+      headers: {
+        "content-type": "application/json",
+        ...(accessToken ? { authorization: `Bearer ${accessToken}` } : {}),
+      },
       body: JSON.stringify({
         mode,
         prompt,

@@ -35,6 +35,25 @@ type AnthropicResponse = {
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-20250514";
 const ANTHROPIC_VERSION = "2023-06-01";
 
+async function getAuthenticatedUser(request: Request) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) return user;
+
+  const authorization = request.headers.get("authorization");
+  const token = authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
+  if (!token) return null;
+
+  const {
+    data: { user: bearerUser },
+  } = await supabase.auth.getUser(token);
+
+  return bearerUser;
+}
+
 function compactWorkspace(workspace: Workspace | undefined) {
   if (!workspace) {
     return {
@@ -216,10 +235,7 @@ export async function POST(request: Request) {
   }
 
   if (hasSupabaseEnv()) {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getAuthenticatedUser(request);
 
     if (!user) {
       return jsonError("Unauthorized.", 401);
